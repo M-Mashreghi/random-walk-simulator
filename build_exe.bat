@@ -15,6 +15,7 @@ set PY=.venv\Scripts\python.exe
 %PY% -m pip install numpy matplotlib pyinstaller || goto :error
 
 %PY% -m PyInstaller --noconfirm --clean --onefile --windowed --name RandomWalk ^
+    --hidden-import matplotlib.backends.backend_tkagg ^
     --exclude-module IPython --exclude-module jedi --exclude-module pandas ^
     --exclude-module scipy --exclude-module torch --exclude-module tensorflow ^
     --exclude-module PyQt5 --exclude-module PyQt6 --exclude-module PySide2 --exclude-module PySide6 ^
