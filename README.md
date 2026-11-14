@@ -51,7 +51,7 @@ Every push to `main` builds `RandomWalk.exe` with GitHub Actions. Download it fr
 **Actions → Build Windows exe → Artifacts → RandomWalk-windows**.
 Pushing a tag such as `v1.0` also attaches the exe to a GitHub release.
 
-To build it on your own Windows machine, run `build_exe.bat`. The program appears at `dist\RandomWalk.exe`.
+To build it on your own Windows machine, run `build_exe.bat`. It creates a clean virtual environment in `.venv` (so other packages in your global Python are not bundled) and writes `dist\RandomWalk.exe`.
 
 ## Add your own model
 

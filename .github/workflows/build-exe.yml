@@ -26,8 +26,9 @@ jobs:
       - name: Smoke test (render a picture without a window)
         run: python random_walk.py --save smoke.png
 
-      - name: Build RandomWalk.exe
-        run: python -m PyInstaller --noconfirm --onefile --windowed --name RandomWalk random_walk.py
+      - name: Build RandomWalk.exe (same script as local builds)
+        shell: cmd
+        run: build_exe.bat
 
       - name: Upload exe
         uses: actions/upload-artifact@v4
