@@ -47,9 +47,10 @@ python random_walk.py --save walk.png      # save a picture and exit, no window
 
 ## Windows executable
 
-Every push to `main` builds `RandomWalk.exe` with GitHub Actions. Download it from the latest run of
-**Actions → Build Windows exe → Artifacts → RandomWalk-windows**.
-Pushing a tag such as `v1.0` also attaches the exe to a GitHub release.
+Download `RandomWalk.exe` from the [latest release](../../releases/latest). No Python needed.
+
+Every push to `main` builds the exe with GitHub Actions and publishes it to the release named after the
+`VERSION` file (for example `v1.0.0`). Bump `VERSION` to publish a new release.
 
 To build it on your own Windows machine, run `build_exe.bat`. It creates a clean virtual environment in `.venv` (so other packages in your global Python are not bundled) and writes `dist\RandomWalk.exe`.
 
