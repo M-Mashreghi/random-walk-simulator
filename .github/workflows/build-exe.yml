@@ -30,6 +30,17 @@ jobs:
         shell: cmd
         run: build_exe.bat
 
+      - name: Test the exe (open the real window, close it after 4 s)
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath dist\RandomWalk.exe -ArgumentList '--selftest','4' -PassThru
+          if (-not $p.WaitForExit(120000)) { $p.Kill(); throw "RandomWalk.exe did not close within 120 s" }
+          if (Test-Path dist\RandomWalk-error.log) { Get-Content dist\RandomWalk-error.log; throw "RandomWalk.exe crashed" }
+          if (-not (Test-Path dist\RandomWalk-selftest.txt)) { throw "RandomWalk.exe exited without opening its window (exit code $($p.ExitCode))" }
+          $out = Get-Content dist\RandomWalk-selftest.txt
+          Write-Host $out
+          if ($out -notmatch 'backend=tkagg') { throw "Unexpected backend: $out" }
+
       - name: Upload exe
         uses: actions/upload-artifact@v4
         with:
@@ -53,5 +64,7 @@ jobs:
           body: |
             Windows build of the interactive random walk simulator.
             Download `RandomWalk.exe` below and run it. No Python needed.
+            The first start takes 10-20 seconds while Windows unpacks the program.
             Windows SmartScreen may warn because the file is not signed: choose "More info", then "Run anyway".
+            If something goes wrong, the error is shown and saved to RandomWalk-error.log next to the exe.
           files: dist/RandomWalk.exe

@@ -819,30 +819,89 @@ def parse_args(argv=None) -> tuple[Settings, str | None]:
     ap.add_argument("--weights2d", default=s.weights2d, help="right,left,up,down")
     ap.add_argument("--tree-depth", type=int, default=s.tree_depth)
     ap.add_argument("--save", metavar="FILE.png", help="save a picture of the final state and exit (no window)")
+    ap.add_argument("--selftest", type=float, metavar="SECONDS", default=0,
+                    help="open the window, close it after SECONDS and write RandomWalk-selftest.txt")
     a = ap.parse_args(argv)
     for k in vars(a):
         if hasattr(s, k):
             setattr(s, k, getattr(a, k))
     s.steps = max(1, s.steps)
     s.walks = max(1, s.walks)
-    return s, a.save
+    return s, a.save, a.selftest
+
+
+def _log_dir():
+    """Folder next to the exe (frozen) or the script, for the self-test file and error log."""
+    import os
+    base = sys.executable if getattr(sys, "frozen", False) else __file__
+    return os.path.dirname(os.path.abspath(base))
+
+
+def _say(msg: str):
+    # A windowed exe has no console: sys.stdout is None there.
+    if sys.stdout is not None:
+        print(msg)
 
 
 def main(argv=None):
-    settings, save = parse_args(argv)
+    settings, save, selftest = parse_args(argv)
     import matplotlib
     if save:
         matplotlib.use("Agg")
+    else:
+        # Name the GUI backend explicitly. PyInstaller bundles only the backends it sees in
+        # matplotlib.use() calls, so without this the exe has no window backend at all.
+        matplotlib.use("TkAgg")
     app = App(settings, interactive=not save)
     if save:
         app.manual = [0, 1, 0][: settings.tree_depth]
         app.draw_tree()
         app.fig.savefig(save, dpi=110, facecolor=app.BG)
-        print(f"Saved {save}")
+        _say(f"Saved {save}")
         return 0
+    if selftest:
+        # Open the real window, let it animate for a moment, then close it and leave a note.
+        closer = app.fig.canvas.new_timer(interval=int(selftest * 1000))
+        closer.single_shot = True
+        closer.add_callback(lambda: app.plt.close(app.fig))
+        closer.start()
     app.show()
+    if selftest:
+        import os
+        backend = matplotlib.get_backend()
+        with open(os.path.join(_log_dir(), "RandomWalk-selftest.txt"), "w") as fh:
+            fh.write(f"ok backend={backend} t={app.t}\n")
     return 0
 
 
+def _report_crash():
+    """Show a crash instead of exiting silently, and save the traceback next to the program."""
+    import os
+    import traceback
+    text = traceback.format_exc()
+    path = os.path.join(_log_dir(), "RandomWalk-error.log")
+    try:
+        with open(path, "w") as fh:
+            fh.write(text)
+    except OSError:
+        path = "(could not write log file)"
+    _say(text)
+    try:
+        import tkinter
+        from tkinter import messagebox
+        root = tkinter.Tk()
+        root.withdraw()
+        messagebox.showerror("Random Walk Simulator", f"The program hit an error:\n\n{text[-1500:]}\n\nSaved to {path}")
+        root.destroy()
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except SystemExit:
+        raise
+    except Exception:
+        _report_crash()
+        sys.exit(1)
